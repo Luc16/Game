@@ -35,11 +35,13 @@ class TileEditor:
         self.created = False
         self.pos_mouse_var = (0, 0)
         self.selected_tile = None
+        self.selected_type = False
         self.num_tiles = 0
         self.tiles = []
         self.max_scroll = 0
 
     def run(self):
+        self.dialog_box.run(self.screen)
         while self.running:
             pg.time.Clock().tick(60)
             self.handle_events()
@@ -57,7 +59,6 @@ class TileEditor:
                     if idx != self.selected_tile:
                         tile.rect.y -= self.scroll
             self.scroll = 0
-            print(self.max_scroll)
         if self.scrolling_down:
             self.scroll += square_side/10
         elif self.scrolling_up:
@@ -90,9 +91,12 @@ class TileEditor:
 
     def handle_mouse_click(self, event):
         if self.sample_tile.rect.collidepoint(event.pos) and not self.created:
-            self.sample_tile.selected = True
             self.created = True
-            self.tiles.append(Tile(self.width, self.height, self.grid, self.num_tiles))
+            self.selected_type = True
+        if self.selected_type:
+            tile = Tile(self.width, self.height, self.grid, self.num_tiles)
+            self.tiles.append(tile)
+
             self.num_tiles += 1
         if self.selected_tile is None:
             for tile in self.tiles:
@@ -112,15 +116,6 @@ class TileEditor:
                     self.num_tiles -= 1
                 self.selected_tile = None
 
-    def text_box_end(self, event):
-        grid = self.dialog_box.handle_text_box_return(event)
-        if grid[0] is not None:
-            try:
-                self.grid = int(grid[0])
-            except ValueError:
-                pass
-            self.sample_tile = Tile(self.width, self.height, self.grid)
-
     def handle_scroll(self, event):
         if event.key == pg.K_DOWN:
             if self.scrolling_down:
@@ -136,13 +131,7 @@ class TileEditor:
             if event.type == pg.QUIT:
                 self.running = False
             elif event.type == pg.KEYDOWN:
-                if self.dialog_box.active:
-                    self.dialog_box.handle_text_box_text(event)
-                    self.text_box_end(event)
-                else:
-                    if not self.dialog_box.active:
-                        self.handle_scroll(event)
-            elif event.type == pg.KEYUP:
+                if event.key == pg.K_UP or event.key == pg.K_DOWN:
                 self.handle_scroll(event)
             if event.type == pg.MOUSEMOTION:
                 self.update_tile_pos(event)

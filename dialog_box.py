@@ -19,7 +19,6 @@ class DialogBox:
     def __init__(self, screen_width, screen_height, *argv):
         self.text_box = pg.Surface((500, 300))
         self.x, self.y = screen_width/2-self.text_box.get_width()/2, screen_height/2-self.text_box.get_height()/2
-        self.active = True
         self.font = pg.font.SysFont('Arial', 32)
         self.texts = []
         for idx, arg in enumerate(argv, 1):
@@ -28,6 +27,33 @@ class DialogBox:
             self.texts.append(Text(arg,
                                    self.x+self.text_box.get_width()/4,
                                    y_pos))
+
+    def run(self, screen):
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                elif event.type == pg.MOUSEBUTTONDOWN:
+                    self.handle_text_box_mouse(event)
+                elif event.type == pg.KEYDOWN:
+                    if self.handle_text_box_return(event):
+                        return
+                    self.handle_text_box_text(event)
+            self.draw_text_box(screen)
+
+    def get_answers(self, var_types):
+        answers = []
+        for idx, text in enumerate(self.texts):
+            if var_types[idx] == str:
+                answers.append(text.answer)
+            try:
+                v = var_types[idx](text.answer)
+                answers.append(v)
+            except ValueError:
+                pass
+        if answers:
+            return answers
+        return [None]
 
     def handle_text_box_mouse(self, event):
         for idx, text in enumerate(self.texts):
@@ -46,14 +72,14 @@ class DialogBox:
                 else:
                     text.answer += event.unicode
 
-    def handle_text_box_return(self, event):
+    @staticmethod
+    def handle_text_box_return(event):
         if event.key == pg.K_RETURN:
-            if self.active:
-                self.active = False
-            return [text.answer for text in self.texts]
-        return [None]
+            return True
+        return False
 
     def draw_text_box(self, screen):
+        screen.fill((200, 200, 200))
         self.text_box.fill((20, 20, 20))
         screen.blit(self.text_box, (self.x, self.y))
         for idx, text in enumerate(self.texts):
@@ -62,23 +88,14 @@ class DialogBox:
             text.rect.width = max(txt.get_width(), 140)
             pg.draw.rect(screen, text.rect_color, text.rect, 2)
             screen.blit(txt, (text.rect.x + 2, text.rect.y + 2))
+        pg.display.flip()
 
 
 if __name__ == '__main__':
     running = True
     pg.init()
-    box = DialogBox(1000, 1000, "title 1")
-    while running:
-        display = pg.display.set_mode((1000, 1000))
-        for event_main in pg.event.get():
-            if event_main.type == pg.QUIT:
-                running = False
-            elif event_main.type == pg.MOUSEBUTTONDOWN:
-                box.handle_text_box_mouse(event_main)
-            elif event_main.type == pg.KEYDOWN:
-                box.handle_text_box_text(event_main)
-        if box.active:
-            box.draw_text_box(display)
-        pg.display.flip()
-
+    display = pg.display.set_mode((1000, 1000))
+    box = DialogBox(1000, 1000, "title 1", "title 2")
+    box.run(display)
+    print(box.get_answers([int, int]))
     pg.quit()
