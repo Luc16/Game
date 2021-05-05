@@ -28,7 +28,7 @@ class DialogBox:
                                    self.x+self.text_box.get_width()/4,
                                    y_pos))
 
-    def run(self, screen):
+    def run(self, screen, func=None, arg=None):
         while True:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -37,6 +37,8 @@ class DialogBox:
                     self.handle_text_box_mouse(event)
                 elif event.type == pg.KEYDOWN:
                     if self.handle_text_box_return(event):
+                        if func is not None:
+                            return func(arg)
                         return
                     self.handle_text_box_text(event)
             self.draw_text_box(screen)
@@ -46,14 +48,18 @@ class DialogBox:
         for idx, text in enumerate(self.texts):
             if var_types[idx] == str:
                 answers.append(text.answer)
-            try:
-                v = var_types[idx](text.answer)
-                answers.append(v)
-            except ValueError:
-                pass
+            else:
+                try:
+                    v = var_types[idx](text.answer)
+                    answers.append(v)
+                except ValueError:
+                    pass
         if answers:
             return answers
         return [None]
+
+    def run_and_return_answers(self, screen, var_types):
+        return self.run(screen, func=self.get_answers, arg=var_types)
 
     def handle_text_box_mouse(self, event):
         for idx, text in enumerate(self.texts):

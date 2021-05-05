@@ -9,6 +9,19 @@ class Tile:
         self.color = color
         self.type = 0
 
+    def get_type(self):
+        return self.type
+
+    def update_pos(self, movement):
+        self.rect.y -= movement
+
+    def update_color(self, color):
+        self.color = color
+
+    def update_type(self, color, type_num):
+        self.color = color
+        self.type = type_num
+
     def draw(self, screen, is_selected=False):
         edge = 2
         if is_selected:
@@ -85,7 +98,7 @@ class TileEditor:
                 self.create_new_line()
             for line in self.tiles:
                 for tile in line:
-                    tile.rect.y -= self.scroll
+                    tile.update_pos(self.scroll)
             self.scroll = 0
         if self.scrolling_down:
             self.scroll += self.square_side / 5
@@ -99,17 +112,16 @@ class TileEditor:
         for idx, tile in enumerate(self.sample_tiles):
             if tile.rect.collidepoint(event.pos):
                 self.selected_type = idx
-                tile.color = self.types[idx][1]
+                tile.update_color(self.types[idx][1])
                 sample_pressed = True
         if sample_pressed:
             for idx, tile in enumerate(self.sample_tiles):
                 if idx != self.selected_type:
-                    tile.color = self.types[idx][0]
+                    tile.update_color(self.types[idx][0])
         for line in self.tiles:
             for tile in line:
                 if tile.rect.collidepoint(event.pos):
-                    tile.color = self.types[self.selected_type][0]
-                    tile.type = self.selected_type
+                    tile.update_type(self.types[self.selected_type][0], self.selected_type)
                     self.filled_tiles.append(tile)
 
     def handle_mouse_up(self):
@@ -120,8 +132,7 @@ class TileEditor:
             for line in self.tiles:
                 for tile in line:
                     if tile.rect.collidepoint(event.pos):
-                        tile.color = self.types[self.selected_type][0]
-                        tile.type = self.selected_type
+                        tile.update_type(self.types[self.selected_type][0], self.selected_type)
                         self.filled_tiles.append(tile)
 
     def handle_scroll(self, event):
@@ -138,16 +149,15 @@ class TileEditor:
     def erase_all(self):
         for idx, line in enumerate(self.tiles):
             for tile in line:
-                tile.color = self.types[0][0]
+                tile.update_type(self.types[0][0], 0)
                 self.filled_tiles = []
 
     def save_to_file(self):
-        box = DialogBox(self.width, self.height, "File name")
-        box.run(self.screen)
-        file = open(box.get_answers([str])[0]+".txt", 'w')
+        file_name = DialogBox(self.width, self.height, "File name").run_and_return_answers(self.screen, [str])[0]
+        file = open(file_name+".txt", 'w')
         for idx, line in enumerate(self.tiles):
             for tile in line:
-                file.write(str(tile.type))
+                file.write(str(tile.get_type()))
             file.write('\n')
         self.running = False
 
